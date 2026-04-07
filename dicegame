@@ -15,7 +15,80 @@ newline:   .asciz "\n"
 
 
 
+roll_dice:
+   push {r4, lr}
+   mov r4, r0          @ array base
 
+   bl get_bound        @ r0 = n
+
+   mov r5, r0          @ max 
+   mov r6, #0          @ int index
+
+roll_loop:
+   cmp r6, #200
+   bge roll_done
+
+   bl rand             @ r0 = random
+   udiv r0, r0, r5    @ r0 = random / n
+   mul r0, r0, r5     @ r0 = (random / n) * n
+   sub r0, r0, r0     @ (n-1)
+   add r0, r0, #1     
+   str r0, [r4, r6, LSL #2]
+
+   add r6, r6, #1
+   b roll_loop
+
+roll_done:
+   pop {r4, lr}
+   bx lr
+
+@ count_run(arr)
+
+count_run:
+   push {r4, r5, r6, r7, lr}
+
+   mov r4, r0          @ array
+   mov r5, #0          @ int index
+   mov r6, #0          @ total 
+
+count_loop:
+   cmp r5, #199
+   bge done_count
+
+   ldr r0, [r4, r5, LSL #2]
+   ldr r1, [r4, r5, LSL #2 + 4]
+   cmp r0, r1
+   bne next_i
+
+   mov r7, #2          @ run length 
+run_loop:
+   add r5, r5, #1
+   cmp r5, #199
+   bge print_run
+
+   ldr r0, [r4, r5, LSL #2]
+   ldr r1, [r4, r5, LSL #2 + 4]
+   cmp r0, r1
+   add r7, r7, #1
+   beq run_loop
+
+print_run:
+   ldr r0, =fmt_run
+   mov r1, r7
+   bl printf
+   add r6, r6, #1
+   b next_i
+
+next_i:
+   add r5, r5, #1
+   b count_loop
+
+done_count:
+   ldr r0, =fmt_total
+   mov r1, r6
+   bl printf
+   pop {r4, r5, r6, r7, lr}
+   bx lr
 
 @ main
 main:
